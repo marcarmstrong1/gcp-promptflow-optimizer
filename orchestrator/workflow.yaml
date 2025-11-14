@@ -1,0 +1,21 @@
+# A minimal placeholder workflow.
+# Its only job is to exist so the API can call it without error.
+main:
+  params: [args] # Accepts the argument string from the API
+  steps:
+    - init:
+        assign:
+          - execution_args: ${json.decode(args)} # Decode the JSON string
+          - job_id: ${execution_args.job_id}
+
+    - log_trigger:
+        call: sys.log
+        args:
+          # --- THIS IS THE FIX ---
+          # We pass the static text and the variable separately.
+          # The logger will print them both.
+          text: "Placeholder workflow triggered for job_id:"
+          data: ${job_id}
+
+    - finish:
+        return: "Workflow placeholder successfully executed."

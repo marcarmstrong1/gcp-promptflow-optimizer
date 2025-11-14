@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+google-cloud-firestore
+google-cloud-workflows
+pydantic
