@@ -1,0 +1,5 @@
+# For the Cloud Function framework
+functions-framework
+
+# For the Vertex AI SDK (Gemini)
+google-cloud-aiplatform
