@@ -1,6 +1,5 @@
-# PromptFlow: The "Real" Orchestrator (Milestone 2)
-# This workflow reads a job from Firestore, runs all tests in parallel,
-# and saves the results.
+# PromptFlow: Milestone 3 (The AI Brain)
+# Expanded format to prevent YAML parsing errors
 
 main:
   params: [args]
@@ -8,19 +7,20 @@ main:
     - init:
         assign:
           - job_id: ${args.job_id}
-          - project_id: "promptflow-project-xyz"
-          - database_id: "promptflow" # The DB name you chose
+          - project_id: "promptflow-project-xyz" 
+          - database_id: "promptflow"
           - jobs_collection: "jobs"
           - results_collection: "results"
-          # Make sure your worker URL is still correct here
+          
+          # --- URLS ---
           - worker_url: "https://prompt-eval-worker-fr6bgye44q-uc.a.run.app"
+          - generator_url: "https://us-central1-promptflow-project-xyz.cloudfunctions.net/prompt-generator"
 
     - log_start:
         call: sys.log
         args:
-          text: '${"Starting Milestone 2 workflow for job_id: " + job_id}'
+          text: '${"Starting Milestone 3 AI Loop for job_id: " + job_id}'
 
-    # Step 1: Read the job from Firestore
     - get_job_details:
         call: googleapis.firestore.v1.projects.databases.documents.get
         args:
@@ -34,71 +34,87 @@ main:
           - base_prompt: ${job_config.basePrompt.stringValue}
           - eval_metric: ${job_config.evaluationMetric.stringValue}
 
-    # Step 2: Update job status to "RUNNING"
     - set_status_running:
         call: googleapis.firestore.v1.projects.databases.documents.patch
         args:
           name: ${job_document.name}
           updateMask:
-            fieldPaths:
-              - "status"
-          body:  # <-- FIX WAS HERE (was 'document:')
+            fieldPaths: ["status"]
+          body:
             fields:
               status:
                 stringValue: "RUNNING"
-        
-    # Step 3: Run all evaluations in parallel
-    - evaluate_population:
+
+    # --- STEP 1: GENERATE PROMPTS ---
+    - generate_population:
+        call: http.post
+        args:
+            url: ${generator_url}
+            auth:
+              type: OIDC
+            body:
+                base_prompt: ${base_prompt}
+                generation: 1
+                count: 4 
+        result: gen_response
+
+    - extract_prompts:
+        assign:
+            - candidate_prompts: ${gen_response.body.prompts}
+
+    # --- STEP 2: EVALUATE POPULATION (Nested Loop) ---
+    - evaluate_prompts:
         parallel:
-          for:
-            value: test_item
-            in: ${test_dataset}
-            steps:
-              - run_one_test:
-                  call: http.post
-                  args:
-                    url: ${worker_url}
-                    auth:
-                      type: OIDC
-                    body:
-                      prompt: ${base_prompt}
-                      test_input: ${test_item.mapValue.fields.input.stringValue}
-                      eval_metric: ${eval_metric}
-                  result: eval_result
-              
-              # Step 4: Save each result to the 'results' collection
-             # Step 4: Save each result to the 'results' collection
-              - save_result:
-                  call: googleapis.firestore.v1.projects.databases.documents.createDocument
-                  args:
-                    parent: ${"projects/" + project_id + "/databases/" + database_id + "/documents"}
-                    collectionId: ${results_collection}
-                    body:  # <-- THIS IS THE FIX
-                      fields:
-                        jobId:
-                          stringValue: ${job_id}
-                        prompt:
-                          stringValue: ${eval_result.body.prompt}
-                        output:
-                          stringValue: ${eval_result.body.output}
-                        score:
-                          doubleValue: ${eval_result.body.score}
-                        timestamp:
-                          timestampValue: ${time.format(sys.now())}
-                  result: saved_doc 
-                  
-    # Step 5: Update job status to "COMPLETE"
+            for:
+                value: prompt_text
+                in: ${candidate_prompts}
+                steps:
+                    - test_data_loop:
+                        for:
+                            value: test_item
+                            in: ${test_dataset}
+                            steps:
+                                - run_one_test:
+                                    call: http.post
+                                    args:
+                                        url: ${worker_url}
+                                        auth:
+                                          type: OIDC
+                                        body:
+                                            prompt: ${prompt_text}
+                                            test_input: ${test_item.mapValue.fields.input.stringValue}
+                                            eval_metric: ${eval_metric}
+                                    result: eval_result
+
+                                - save_result:
+                                    call: googleapis.firestore.v1.projects.databases.documents.createDocument
+                                    args:
+                                        parent: ${"projects/" + project_id + "/databases/" + database_id + "/documents"}
+                                        collectionId: ${results_collection}
+                                        body:
+                                            fields:
+                                                jobId:
+                                                  stringValue: ${job_id}
+                                                prompt:
+                                                  stringValue: ${prompt_text}
+                                                output:
+                                                  stringValue: ${eval_result.body.output}
+                                                score:
+                                                  doubleValue: ${eval_result.body.score}
+                                                timestamp:
+                                                  timestampValue: ${time.format(sys.now())}
+                                    result: saved_doc
+
     - set_status_complete:
         call: googleapis.firestore.v1.projects.databases.documents.patch
         args:
           name: ${job_document.name}
           updateMask:
-            fieldPaths:
-              - "status"
-          body:  # <-- FIX WAS HERE (was 'document:')
+            fieldPaths: ["status"]
+          body:
             fields:
               status:
                 stringValue: "COMPLETE"
         
     - finish:
-        return: ${"Job " + job_id + " completed."}
+        return: "Job completed successfully."
