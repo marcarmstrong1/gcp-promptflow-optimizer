@@ -1,5 +1,5 @@
-# PromptFlow: Milestone 3 (The AI Brain)
-# Expanded format to prevent YAML parsing errors
+# PromptFlow: Milestone 5 (Evolutionary)
+# Supports passing parent_prompts to generator
 
 main:
   params: [args]
@@ -33,6 +33,8 @@ main:
           - test_dataset: ${job_document.fields.testDataset.arrayValue.values}
           - base_prompt: ${job_config.basePrompt.stringValue}
           - eval_metric: ${job_config.evaluationMetric.stringValue}
+          # Attempt to get parents. Default to null if missing.
+          - raw_parents: ${map.get(job_config, "parentPrompts")}
 
     - set_status_running:
         call: googleapis.firestore.v1.projects.databases.documents.patch
@@ -54,7 +56,8 @@ main:
               type: OIDC
             body:
                 base_prompt: ${base_prompt}
-                generation: 1
+                # Pass the Firestore array structure directly to the generator
+                parent_prompts_firestore: ${raw_parents}
                 count: 4 
         result: gen_response
 
@@ -101,6 +104,8 @@ main:
                                                   stringValue: ${eval_result.body.output}
                                                 score:
                                                   doubleValue: ${eval_result.body.score}
+                                                reasoning:
+                                                  stringValue: ${default(map.get(eval_result.body, "reasoning"), "Reasoning Missing in Worker Response")}
                                                 timestamp:
                                                   timestampValue: ${time.format(sys.now())}
                                     result: saved_doc

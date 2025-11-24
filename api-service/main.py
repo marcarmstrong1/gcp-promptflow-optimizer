@@ -25,6 +25,7 @@ class JobConfig(BaseModel):
     base_prompt: str
     evaluation_metric: str
     test_data: list[dict] # e.g., [{"input": "..."}]
+    parent_prompts: list[str] = []
 
 # --- Routes ---
 
@@ -50,7 +51,8 @@ async def create_job(config: JobConfig):
         "created_at": firestore.SERVER_TIMESTAMP,
         "config": {
             "basePrompt": config.base_prompt,
-            "evaluationMetric": config.evaluation_metric
+            "evaluationMetric": config.evaluation_metric,
+            "parentPrompts": config.parent_prompts # Save pare
         },
         "testDataset": config.test_data,
         "bestScore": 0.0,
