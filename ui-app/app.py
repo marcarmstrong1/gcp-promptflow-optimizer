@@ -5,21 +5,20 @@ import time
 import os
 import json
 
-# --- Configuration ---
-# We will pass the API URL in via Environment Variable
+# Configuration
+# Pass the API URL in via Environment Variable
 API_URL = os.environ.get("API_URL", "http://localhost:8000")
 
-# --- UI Layout ---
+# UI Layout
 st.set_page_config(page_title="PromptFlow", page_icon="🧬", layout="wide")
 
 st.title("PromptFlow: Evolutionary Prompt Optimizer")
 st.markdown("Define a task, and let the AI evolve the perfect prompt for you.")
 
-# --- Sidebar: Job Configuration ---
+# Sidebar: Job Configuration
 with st.sidebar:
     st.header("Configuration")
     base_prompt = st.text_area("Base Prompt Template", value="Translate to pirate style: {input}", height=100)
-    # Metric is now a description for the AI judge
     eval_metric = st.text_input("Evaluation Criteria", value="Must sound like an authentic 18th century pirate.")
     
     st.subheader("Test Data")
@@ -31,7 +30,7 @@ with st.sidebar:
 
     submit_btn = st.button("Launch Optimization Job", type="primary")
 
-# --- Helper to Polling ---
+# Helper to Polling
 def poll_job(job_id):
     status_container = st.empty()
     with st.status("Optimizing...", expanded=True) as status_box:
@@ -56,7 +55,7 @@ def poll_job(job_id):
                 st.error(f"Error checking status: {e}")
                 return None
 
-# --- Main Logic ---
+# Main
 if submit_btn:
     inputs = [line.strip() for line in test_data_input.split('\n') if line.strip()]
     test_dataset = [{"input": i} for i in inputs]
@@ -87,8 +86,8 @@ if 'current_job_id' in st.session_state:
         if results:
             df = pd.DataFrame(results)
             
-            # --- FORCE COLUMN ORDER FOR VISIBILITY ---
-            # We explicitly want to see these columns
+            # FORCE COLUMN ORDER FOR VISIBILITY
+            # Explicitly want to see these columns
             target_cols = ["score", "prompt", "output", "reasoning"]
             
             # Filter for columns that actually exist in the dataframe
@@ -105,7 +104,7 @@ if 'current_job_id' in st.session_state:
 
             st.dataframe(df, use_container_width=True)
             
-            # --- EVOLUTION SECTION ---
+            # EVOLUTION SECTION
             st.divider()
             st.subheader("Evolve Next Generation")
             with st.form("evolution_form"):
