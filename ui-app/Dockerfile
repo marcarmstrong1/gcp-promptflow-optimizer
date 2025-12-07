@@ -11,5 +11,4 @@ COPY . .
 EXPOSE 8080
 
 # Run the application
-# address=0.0.0.0 is required for Cloud Run
 CMD ["streamlit", "run", "app.py", "--server.port=8080", "--server.address=0.0.0.0"]
