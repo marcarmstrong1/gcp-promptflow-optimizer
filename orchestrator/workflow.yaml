@@ -1,5 +1,4 @@
-# PromptFlow: Milestone 5 (Evolutionary)
-# Supports passing parent_prompts to generator
+# PromptFlow Orchestrator (YAML is absolute hell)
 
 main:
   params: [args]
@@ -12,7 +11,7 @@ main:
           - jobs_collection: "jobs"
           - results_collection: "results"
           
-          # --- URLS ---
+          # URLS
           - worker_url: "https://prompt-eval-worker-fr6bgye44q-uc.a.run.app"
           - generator_url: "https://us-central1-promptflow-project-xyz.cloudfunctions.net/prompt-generator"
 
@@ -47,7 +46,7 @@ main:
               status:
                 stringValue: "RUNNING"
 
-    # --- STEP 1: GENERATE PROMPTS ---
+    # GENERATE PROMPTS
     - generate_population:
         call: http.post
         args:
@@ -65,7 +64,7 @@ main:
         assign:
             - candidate_prompts: ${gen_response.body.prompts}
 
-    # --- STEP 2: EVALUATE POPULATION (Nested Loop) ---
+    # EVALUATE POPULATION (Nested Loop)
     - evaluate_prompts:
         parallel:
             for:
