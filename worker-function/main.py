@@ -6,12 +6,12 @@ import os
 import json
 import re
 
-# --- Configuration ---
+# Configuration
 PROJECT_ID = os.environ.get("GCP_PROJECT") 
 LOCATION = "us-central1"
 MODEL_NAME = "gemini-2.5-flash" 
 
-# --- Initialization ---
+# Initialization
 model = None
 
 def init_model():
@@ -54,7 +54,7 @@ def prompt_eval_worker(request):
     except Exception as e:
         return (f"Parse Error: {e}", 400)
 
-    # 1. GENERATE (Task)
+    # GENERATE
     try:
         final_prompt = prompt_to_test.format(input=test_input)
         response = model.generate_content(final_prompt)
@@ -63,7 +63,7 @@ def prompt_eval_worker(request):
         print(f"Gen Error: {e}")
         llm_output = "Error: Content Blocked or Failed."
 
-    # 2. JUDGE (Score)
+    # JUDGE
     judge_reasoning = "N/A"
     score = 0.0
     
