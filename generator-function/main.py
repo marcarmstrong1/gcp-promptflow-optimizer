@@ -5,21 +5,21 @@ from vertexai.generative_models import GenerativeModel, GenerationConfig
 import os
 import json
 
-# --- Configuration ---
+# Configuration
 PROJECT_ID = os.environ.get("GCP_PROJECT") 
 LOCATION = "us-central1"
 MODEL_NAME = "gemini-2.5-flash" 
 
-# --- Initialization ---
+# Initialization 
 model = None
 
 def init_model():
     global model
     if model is None:
-        print(f"🔄 Initializing Vertex AI for project: {PROJECT_ID}")
+        print(f"Initializing Vertex AI for project: {PROJECT_ID}")
         vertexai.init(project=PROJECT_ID, location=LOCATION)
         
-        # PERMISSIVE SAFETY SETTINGS
+        # PERMISSIVE SAFETY SETTINGS (Pirate translator broke this with medium block)
         safety_config = {
             gen_models.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: gen_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
             gen_models.HarmCategory.HARM_CATEGORY_HARASSMENT: gen_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
@@ -28,7 +28,7 @@ def init_model():
         }
         
         model = GenerativeModel(MODEL_NAME, safety_settings=safety_config)
-        print("✅ Worker: Vertex AI client initialized.")
+        print("Worker: Vertex AI client initialized.")
 
 def clean_json_string(json_str):
     """Removes markdown code blocks if present."""
@@ -53,7 +53,7 @@ def prompt_eval_worker(request):
     except Exception as e:
         return (f"Parse Error: {e}", 400)
 
-    # 1. GENERATE (Task)
+    # GENERATE
     try:
         final_prompt = prompt_to_test.format(input=test_input)
         response = model.generate_content(final_prompt)
@@ -62,7 +62,7 @@ def prompt_eval_worker(request):
         print(f"Gen Error: {e}")
         llm_output = "Error: Content Blocked or Failed."
 
-    # 2. JUDGE (Score)
+    # JUDGE
     judge_reasoning = "N/A"
     score = 0.0
     
