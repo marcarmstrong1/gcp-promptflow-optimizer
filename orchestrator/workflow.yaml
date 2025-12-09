@@ -12,8 +12,8 @@ main:
           - results_collection: "results"
           
           # URLS
-          - worker_url: "https://prompt-eval-worker-fr6bgye44q-uc.a.run.app"
-          - generator_url: "https://us-central1-promptflow-project-xyz.cloudfunctions.net/prompt-generator"
+          - worker_url: "WORKER URL"
+          - generator_url: "GENERATOR URL"
 
     - log_start:
         call: sys.log
